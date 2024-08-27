@@ -1,5 +1,4 @@
-//= require recurring_select_dialog
-//= require_self
+import './recurring_select_dialog.js.erb';
 
 document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("focusin", (e) => {

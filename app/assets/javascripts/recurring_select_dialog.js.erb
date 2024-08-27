@@ -1,5 +1,73 @@
-//= require utils
-//= require defaults
+function css(el, styles) {
+  for (let rule in styles) {
+    el.style[rule] = styles[rule]
+  }
+}
+
+function trigger(el, eventName) {
+  el.dispatchEvent(new CustomEvent(eventName))
+}
+
+function isPlainObject(obj) {
+  return obj && obj.toString() === "[object Object]"
+}
+
+const eventHandlerRefsExpando = '__recurring_select_events'
+
+function on(el, events, sel, handler) {
+  let eventHandler = sel
+  if (handler) {
+    eventHandler = (e) => {
+      if (e.target.matches(sel)) {
+        if (handler.call(this, e) === false) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+      }
+    }
+  }
+
+  el[eventHandlerRefsExpando] = el[eventHandlerRefsExpando] || []
+
+  events.trim().split(/ +/).forEach(type => {
+    el[eventHandlerRefsExpando].push([ type, eventHandler ])
+    el.addEventListener(type, eventHandler)
+  })
+}
+
+function off(el, events) {
+  const types = events.trim().split(/ +/)
+
+  el[eventHandlerRefsExpando] = (el[eventHandlerRefsExpando] || [])
+    .filter(([t, h], i) => {
+      if (types.includes(t)) {
+        el.removeEventListener(t, h)
+        return false
+      }
+      return true
+    })
+}
+
+function serialize(params, prefix) {
+  const query = Object.keys(params).map((key) => {
+    const value  = params[key];
+
+    if (params.constructor === Array)
+      key = `${prefix}[]`;
+    else if (params.constructor === Object)
+      key = (prefix ? `${prefix}[${key}]` : key);
+
+    if (value === null)
+      return `${key}=`
+
+    if (typeof value === 'object')
+      return serialize(value, key);
+    else
+      return `${key}=${encodeURIComponent(value)}`;
+  });
+
+  return [].concat.apply([], query).join('&');
+}
 
 class RecurringSelectDialog {
   constructor(recurring_selector) {
@@ -442,6 +510,36 @@ class RecurringSelectDialog {
   }
 }
 
-RecurringSelectDialog.config = defaultConfig
+RecurringSelectDialog.config = {
+  options: {
+    monthly: {
+      show_week: [true, true, true, true, false, false]
+    }
+  },
+  texts: {
+    locale_iso_code: "en",
+    repeat: "Repeat",
+    last_day: "Last Day",
+    frequency: "Frequency",
+    daily: "Daily",
+    weekly: "Weekly",
+    monthly: "Monthly",
+    yearly: "Yearly",
+    every: "Every",
+    days: "day(s)",
+    weeks_on: "week(s) on",
+    months: "month(s)",
+    years: "year(s)",
+    day_of_month: "Day of month",
+    day_of_week: "Day of week",
+    cancel: "Cancel",
+    ok: "OK",
+    summary: "Summary",
+    first_day_of_week: 0,
+    days_first_letter: ["S", "M", "T", "W", "T", "F", "S" ],
+    order: ["1st", "2nd", "3rd", "4th", "5th", "Last"],
+    show_week: [true, true, true, true, false, false]
+  }
+}
 
 window.RecurringSelectDialog = RecurringSelectDialog
